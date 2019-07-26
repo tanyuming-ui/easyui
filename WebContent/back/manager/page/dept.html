@@ -1,0 +1,130 @@
+<table id="dept_data" data-options="fit:true" ></table>  
+
+<script type="text/javascript">
+var dept_editRow = undefined;
+var dept_op;
+var dept_flag;
+
+var dept_obj = $('#dept_data').datagrid({    
+    url:'../../dept',
+    queryParams:{op:"findByPage"},
+    fitColumns:true,
+    striped:true,
+    loadMsg:"数据加载中，请稍后...",
+    pagination:true,
+    rownumbers:true,
+    singleSelect:true,
+    pageSize:10,
+    sortName:"deptno",
+    remoteSort: false,
+    pageList:[3,5,10,20,30,40,50],
+    columns:[[    
+        {field:'deptno',title:'部门编号',width:100,align:'center',sortable:true, editor:{type:"text",options:{required:true}}},    
+        {field:'dname',title:'部门名称',width:100,align:'center',editor:{type:"text",options:{required:true}}},    
+        {field:'loc',title:'部门地址',width:100,align:'center',editor:{type:"text"}},   
+        {field:'_operate',title:'操作',width:100,align:'center',formatter:function(value,row,index){
+        	return "<a href='javascript:delDept("+row.deptno+")'>[删除]</a>";
+        }}    
+    ]],
+    toolbar: [{
+    	text:"添加",
+		iconCls: 'icon-book-addresses-add',
+		handler: function(){
+			dept_op="addDept";
+			dept_flag="添加";
+			if (dept_editRow != undefined) { // 有行正在编辑
+				dept_obj.datagrid('rejectChanges');
+				dept_obj.datagrid('unselectAll');
+				dept_editRow = undefined;
+			}
+			// 在表格的最前面插入一行
+			dept_obj.datagrid('insertRow',{index:0,row:{}});
+			dept_editRow = 0;
+			dept_obj.datagrid('beginEdit',dept_editRow);
+		}
+	},'-',{
+		text:"修改",
+		iconCls: 'icon-book-addresses-edit',
+		handler: function(){
+			dept_op="updateDept";
+			dept_flag="修改";
+			if (dept_editRow != undefined) { // 有行正在编辑
+				dept_obj.datagrid('rejectChanges');
+				dept_obj.datagrid('unselectAll');
+				dept_editRow = undefined;
+			}
+			
+			// 获取用户选中的行
+			var row = dept_obj.datagrid('getSelected');
+			if (!row) {
+				$.messager.show({title:'温馨提示',msg:'请选择您要修改的部门信息...',timeout:1500,showType:'slide'});
+				return;
+			}
+			
+			// 获取选中的行的索引
+			dept_editRow = dept_obj.datagrid('getRowIndex', row);
+			
+			// 开始编辑这一行
+			dept_obj.datagrid('beginEdit',dept_editRow);
+		}
+	},'-',{
+		text:"删除",
+		iconCls: 'icon-book-addresses-delete',
+		handler: function(){
+		
+		}
+	},'-',{
+		text:"保存",
+		iconCls: 'icon-save',
+		handler: function(){
+			if (dept_editRow == undefined) {
+				return;
+			}
+			
+			// 先结束编辑
+			dept_obj.datagrid('endEdit',dept_editRow);
+			
+			// 获取当前正在被编辑行
+			var row = dept_obj.datagrid('getChanges')[0];
+			if (row) {
+				row.op = dept_op;
+				$.post("../../dept", row, function(data){
+					data = parseInt($.trim(data));
+					if (data > 0) {
+						$.messager.show({title:'成功提示',msg:'部门信息'+dept_flag+'成功...',timeout:1500,showType:'slide'});
+						dept_obj.datagrid('reload');
+					} else {
+						$.messager.alert('失败提示','不能信息'+dept_flag+'失败...','error');
+					}
+					dept_editRow = undefined
+				}, "text");
+			}
+		}
+	},'-',{
+		text:"撤销",
+		iconCls: 'icon-undo',
+		handler: function(){
+			dept_obj.datagrid('rejectChanges');
+			dept_obj.datagrid('unselectAll');
+			dept_editRow = undefined
+		}
+	}]
+});  
+
+function delDept(deptno) {
+	$.messager.confirm('删除确认', '数据一旦删除将不能恢复，您确定要删除此数据吗？', function(r){
+		if (r){
+			$.post("../../dept", {op:"deleteDept", deptno:deptno}, function(data){
+				data = parseInt($.trim(data));
+				if (data > 0) {
+					$.messager.show({title:'成功提示',msg:'部门信息删除成功...',timeout:1500,showType:'slide'});
+					dept_obj.datagrid('reload');
+				} else {
+					$.messager.alert('失败提示','不能信息删除失败...','error');
+				}
+			},"text");
+		}
+	});
+}
+</script>
+

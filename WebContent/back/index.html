@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="../easyui/js/jquery-1.12.4.js"></script>
+<script type="text/javascript">
+function login() {
+	var uname = $.trim($("#uname").val());
+	var pwd = $.trim($("#pwd").val());
+	$.post("../user", {op:"login", uname:uname, pwd:pwd}, function(data){
+		data = parseInt($.trim(data));
+		if (data > 0) {
+			location.href="manager/index.jsp";
+		} else {
+			alert("账号或密码错误...");
+		}
+	},"text");
+}
+</script>
+</head>
+<body>
+<form id="myform">
+	<input type="text" id="uname" placeholder="账号" />
+	<input type="password" id="pwd" placeholder="密码" />
+	<input type="button" onclick="login()" value="登录"/>
+</form>
+</body>
+</html>

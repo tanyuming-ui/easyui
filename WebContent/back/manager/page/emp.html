@@ -1,0 +1,220 @@
+<table id="emp_data" data-options="fit:true" ></table>  
+
+<div id="emp_search">
+	<a href="javascript:showAddDialog()" class="easyui-linkbutton" style="float:left" data-options="iconCls:'icon-user-add',plain:true">添加</a>  
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:showUpdateDialog()" class="easyui-linkbutton" style="float:left" data-options="iconCls:'icon-user-edit',plain:true">修改</a>  
+	<div class="datagrid-btn-separator"></div>
+	<a href="#" class="easyui-linkbutton" style="float:left" data-options="iconCls:'icon-user-cross',plain:true">删除</a>  
+	<div class="datagrid-btn-separator"></div>
+	<label class="lbl" for="emp_search_deptno">部门:</label>
+	<select id="emp_search_deptno" class="slt">
+		<option value="0">--请选择--</option>
+	</select>
+	<label class="lbl" for=""emp_search_ename>员工姓名:</label>
+	<input type="text" id="emp_search_ename" class="ipt">
+	<label class="lbl" for="emp_search_tel">手机号码:</label>
+	<input type="text" id="emp_search_tel" class="ipt">&nbsp;&nbsp;
+	<a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-search'">查询</a>  
+</div>
+
+<div id="emp_add_dialog" class="easyui-dialog" title="添加员工信息" data-options="iconCls:'icon-user-add',resizable:true,modal:true,fit:true,closed:true">   
+	<ul>
+		<li>
+			<label for="emp_deptno">所在部门:</label>
+			<select id="emp_deptno" class="ipt">
+				<option value="0">--请选择--</option>
+			</select>
+		</li>
+		<li>
+			<label for="emp_ename">员工姓名:</label>
+			<input type="text" id="emp_ename" class="ipt" placeholder="请输入员工姓名"/>
+			
+		</li>
+		<li>
+			<label for="emp_tel">联系方式:</label>
+			<input type="text" id="emp_tel" class="ipt" placeholder="请输入员工电话"/>
+		</li>
+		<li>
+			<label for="emp_pic">员工图像:</label>
+			<input type="file" name="pic" id="emp_pic" placeholder="请选择员工图像" onchange="setImagePreviews(this, 'showpic')"/>
+		</li>
+		<li >
+			<label for="emp_introl">员工简介:</label>
+			<textarea name="editor1" id="editor1" rows="10" cols="90"></textarea><!-- 加一行 -->
+		</li>
+	</ul>
+	<div id="showpic"></div>
+</div>  
+<style>
+.lbl {
+	margin-left: 20px;
+}
+
+.ipt {
+	border:1px solid #95B8E7;
+	width:160px;
+}
+
+.slt {
+	border:1px solid #95B8E7;
+	width:120px;
+}
+
+#emp_add_dialog ul{
+	list-style-type:none;
+	width:98%;
+}
+
+#emp_add_dialog ul>li{
+	margin-top: 20px;
+	width:40%;
+	float:left;
+	line-height: 30px;
+}
+
+#emp_add_dialog ul>li:last-child{
+	width:100%;
+	float:left;
+}
+
+#showpic{
+	width: 100px;
+	height: 100px;
+	border: 1px solid red;
+	position: absolute;
+	right: 10%;
+	top: 10%;
+}
+</style>
+
+<script type="text/javascript" src="../../ckeditor/ckeditor.js"></script><!-- 引入ceditor路径 -->
+<script type="text/javascript">
+CKEDITOR.replace( 'editor1' );<!-- 替换 ckeditor -->
+
+var emp_depts;
+var emp_obj;
+$(function(){
+	$.post("../../dept", {op:"findAll"}, function(data) {
+		emp_depts = data;
+		var str = "";
+		$.each(data, function(index, item) {
+			str += "<option value='"+item.deptno+"'>"+item.dname+"</option>";
+		});
+		$("#emp_search_deptno").append($(str));	
+		$("#emp_deptno").append($(str));	
+		emp_data();
+	},"json");
+})
+
+
+function emp_data(){
+    emp_obj = $('#emp_data').datagrid({    
+    url:'../../emp',
+    queryParams:{op:"findByPage"},
+    fitColumns:true,
+    striped:true,
+    loadMsg:"数据加载中，请稍后...",
+    pagination:true,
+    rownumbers:true,
+    singleSelect:true,
+    pageSize:10,
+    sortName:"eno",
+    remoteSort: false,
+    pageList:[3,5,10,20,30,40,50],
+    columns:[[  
+		{checkbox:true},      
+        {field:'pic',title:'图片',width:100,align:'center',formatter:function(val, row, index){
+        	return "<img src='../../../"+val+"' width='50px' height='50px'/>";
+        	}},    
+        {field:'eno',title:'员工编号',width:100,align:'center',sortable:true},    
+        {field:'ename',title:'员工姓名',width:100,align:'center'},    
+        {field:'deptno',title:'部门编号',width:100,align:'center', formatter:function(val, row, index){
+        	for (var i = 0, len = emp_depts.length; i < len; i ++){
+        		if (emp_depts[i].deptno == val){
+        			return emp_depts[i].dname;
+        		}
+        	}
+        }},
+        {field:'tel',title:'联系方式',width:100,align:'center'},    
+        {field:'_operate',title:'操作',width:100,align:'center',formatter:function(value,row,index){
+        	return "<a href=''>[详细]</a>";
+        }}    
+    ]],
+    toolbar:"#emp_search"
+});
+}
+function showAddDialog(){
+	$('#emp_add_dialog').dialog({    
+	    title: '添加员工信息',    
+	    closed: false,    
+	    cache: false, 
+	    iconCls:"icon-user-add",
+	    buttons:[{
+			text:'添加',
+			iconCls:'icon-user-add',
+			handler:function(){
+				var deptno = $.trim($("#emp_deptno").val());
+				var ename = $.trim($("#emp_ename").val());
+				var tel = $.trim($("#emp_tel").val());
+				var intro = CKEDITOR.instances.editor1.getData();
+				
+				$.ajaxFileUpload({
+					url:'../../emp?op=addEmps',
+					secureuri: false,
+					fileElementId:"emp_pic",
+					dataType:"json",
+					data:{deptno:deptno, ename:ename, tel:tel, intro:intro},
+					success:function(data, stuts){
+						data = parseInt($.trim(data));
+						conole.log(data);
+						if (data == 1){
+							$("#emp_form")[0].reset();
+							$("#showpic").html("");
+							CKEDITOR.instances.editor1.setData("");
+							$.messager.show({title:'温馨提示',msg:'员工信息添加成功...',timeout:1500,showType:'slide'});
+							$('#emp_data').datagrid("reload");
+							$('#emp_add_dialog').dialog("close");
+						}else{
+							$.messager.alert('失败提示','员工信息添加失败...','error');
+						}
+					},
+					error:function(data, status, e){
+						$.messager.alert('失败提示',"员工信息添加失败,请稍后再试...\n" + e,'error');
+					}
+				});
+			}
+		},{
+			text:'返回',
+			iconCls:'icon-undo',
+			handler:function(){
+				$('#emp_add_dialog').dialog("close");
+			}
+		}]
+	}); 
+}
+
+function showUpdateDialog() {
+	$('#emp_add_dialog').dialog({    
+	    title: '修改员工信息',    
+	    closed: false,    
+	    cache: false, 
+	    iconCls:"icon-user-edit",
+	    buttons:[{
+			text:'修改',
+			iconCls:'icon-user-edit',
+			handler:function(){
+
+			}
+		},{
+			text:'返回',
+			iconCls:'icon-undo',
+			handler:function(){
+				$('#emp_add_dialog').dialog("close");
+			}
+		}]
+	}); 
+}
+
+</script>
+
